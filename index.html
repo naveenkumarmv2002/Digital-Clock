@@ -1,51 +1,245 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="clock">09:09:09</div>
-    <script>
-        
-setInterval(showTime, 1000);
-function showTime() {
-    let time = new Date();
-    let hour = time.getHours();
-    let min = time.getMinutes();
-    let sec = time.getSeconds();
-    am_pm = "AM";
-
-    // Setting time for 12 Hrs format
-    if (hour >= 12) {
-        if (hour > 12) hour -= 12;
-        am_pm = "PM";
-    } else if (hour == 0) {
-        hr = 12;
-        am_pm = "AM";
+  <title>Smart Clock</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f0f0f0;
+      color: #000;
+      transition: background 0.5s, color 0.5s;
     }
 
-    hour =
-        hour < 10 ? "0" + hour : hour;
-    min = min < 10 ? "0" + min : min;
-    sec = sec < 10 ? "0" + sec : sec;
+    .container {
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      margin: auto;
+      padding: 30px;
+      position: relative;
+    }
 
-    let currentTime =
-        hour +
-        ":" +
-        min +
-        ":" +
-        sec +
-        am_pm;
+    #themeToggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 6px 12px;
+      font-size: 14px;
+      background-color: #ddd;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-    // Displaying the time
-    document.getElementById(
-        "clock"
-    ).innerHTML = currentTime;
-}
+    .dark-mode {
+      background: #121212;
+      color: #ffffff;
+    }
 
-showTime();
+    .dark-mode .container {
+      background: #1e1e1e;
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
+    }
 
-    </script>
+    .dark-mode #themeToggle {
+      background-color: #333;
+      color: #fff;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .tab {
+      display: none;
+      margin-top: 20px;
+      font-size: 24px;
+    }
+
+    #clock {
+      font-size: 48px;
+      font-weight: bold;
+    }
+
+    #day, #date {
+      font-size: 20px;
+      margin-top: 5px;
+    }
+
+    input[type="time"],
+    input[type="number"] {
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <button id="themeToggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+
+    <h2>🕒 Digital Smart Clock</h2>
+
+    <button onclick="showTab('clockTab')">Clock</button>
+    <button onclick="showTab('alarmTab')">Alarm</button>
+    <button onclick="showTab('stopwatchTab')">Stopwatch</button>
+    <button onclick="showTab('timerTab')">Timer</button>
+
+    <div id="clockTab" class="tab" style="display:block;">
+      <div id="clock"></div>
+      <div id="day"></div>
+      <div id="date"></div>
+    </div>
+
+    <div id="alarmTab" class="tab">
+      <h3>Set Alarm</h3>
+      <input type="time" id="alarmTime">
+      <br>
+      <button onclick="setAlarm()">Set</button>
+      <p id="alarmStatus"></p>
+    </div>
+
+    <div id="stopwatchTab" class="tab">
+      <div id="stopwatch">00:00:00</div>
+      <button onclick="startStopwatch()">Start</button>
+      <button onclick="stopStopwatch()">Stop</button>
+      <button onclick="resetStopwatch()">Reset</button>
+    </div>
+
+    <div id="timerTab" class="tab">
+      <input type="number" id="timerInput" placeholder="Seconds">
+      <br>
+      <button onclick="startTimer()">Start</button>
+      <div id="timerDisplay" style="margin-top: 10px;">00:00</div>
+    </div>
+  </div>
+
+  <!-- 🔊 Audio Alert -->
+  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav" preload="auto"></audio>
+
+  <script>
+    function showTab(tabId) {
+      document.querySelectorAll('.tab').forEach(tab => tab.style.display = 'none');
+      document.getElementById(tabId).style.display = 'block';
+    }
+
+    setInterval(() => {
+      const now = new Date();
+      const time = now.toLocaleTimeString();
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const months = ["January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"];
+
+      const day = days[now.getDay()];
+      const date = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+      document.getElementById("clock").textContent = time;
+      document.getElementById("day").textContent = day;
+      document.getElementById("date").textContent = date;
+
+      checkAlarm(now);
+    }, 1000);
+
+    // Alarm
+    let alarmTime = null;
+    function setAlarm() {
+      alarmTime = document.getElementById("alarmTime").value;
+      document.getElementById("alarmStatus").textContent = "Alarm set for " + alarmTime;
+    }
+
+    function checkAlarm(current) {
+      if (!alarmTime) return;
+      const now = current.toTimeString().substring(0, 5);
+      if (now === alarmTime) {
+        playBeep();
+        alert("⏰ Alarm Ringing!");
+        alarmTime = null;
+        document.getElementById("alarmStatus").textContent = "";
+      }
+    }
+
+    // Stopwatch
+    let swInterval, swSeconds = 0;
+    function updateStopwatch() {
+      let hrs = Math.floor(swSeconds / 3600);
+      let mins = Math.floor((swSeconds % 3600) / 60);
+      let secs = swSeconds % 60;
+      document.getElementById("stopwatch").textContent =
+        `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    function startStopwatch() {
+      if (swInterval) return;
+      swInterval = setInterval(() => {
+        swSeconds++;
+        updateStopwatch();
+      }, 1000);
+    }
+    function stopStopwatch() {
+      clearInterval(swInterval);
+      swInterval = null;
+    }
+    function resetStopwatch() {
+      stopStopwatch();
+      swSeconds = 0;
+      updateStopwatch();
+    }
+
+    // Timer
+    let timerInterval, timerSeconds = 0;
+    function startTimer() {
+      timerSeconds = parseInt(document.getElementById("timerInput").value);
+      if (isNaN(timerSeconds) || timerSeconds <= 0) return;
+      updateTimer();
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        updateTimer();
+        if (timerSeconds <= 0) {
+          clearInterval(timerInterval);
+          playBeep();
+          alert("⏳ Timer Done!");
+        }
+      }, 1000);
+    }
+
+    function updateTimer() {
+      let mins = Math.floor(timerSeconds / 60);
+      let secs = timerSeconds % 60;
+      document.getElementById("timerDisplay").textContent =
+        `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Beep Sound
+    function playBeep() {
+      const beep = document.getElementById("beep");
+      beep.currentTime = 0;
+      beep.play();
+    }
+
+    // Theme Toggle with Label Switch
+    function toggleTheme() {
+      const body = document.body;
+      const btn = document.getElementById("themeToggle");
+
+      body.classList.toggle("dark-mode");
+
+      if (body.classList.contains("dark-mode")) {
+        btn.textContent = "☀️ Light Mode";
+      } else {
+        btn.textContent = "🌙 Dark Mode";
+      }
+    }
+  </script>
+
 </body>
-
 </html>
+
